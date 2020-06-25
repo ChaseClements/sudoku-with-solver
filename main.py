@@ -13,4 +13,5 @@ def play(game):
         running = game.check_events()                           # Check if an event has occurred
         game.update_display()                                   # Update the display
 
+
 main()
