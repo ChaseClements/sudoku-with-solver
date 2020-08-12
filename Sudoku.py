@@ -32,24 +32,9 @@ class Sudoku:
                         [0,7,0,3,0,0,0,1,2],
                         [1,2,0,0,0,7,4,0,0],
                         [0,4,9,2,0,6,0,0,7]]
-        self.new_numbers = [[7,8,0,4,0,0,1,2,0],
-                            [6,0,0,0,7,5,0,0,9],
-                            [0,0,0,6,0,1,0,7,8],
-                            [0,0,7,0,4,0,2,6,0],
-                            [0,0,1,0,5,0,9,3,0],
-                            [9,0,4,0,6,0,0,0,5],
-                            [0,7,0,3,0,0,0,1,2],
-                            [1,2,0,0,0,7,4,0,0],
-                            [0,4,9,2,0,6,0,0,7]]
-        self.computer_numbers = [[7, 8, 0, 4, 0, 0, 1, 2, 0],
-                                 [6, 0, 0, 0, 7, 5, 0, 0, 9],
-                                 [0, 0, 0, 6, 0, 1, 0, 7, 8],
-                                 [0, 0, 7, 0, 4, 0, 2, 6, 0],
-                                 [0, 0, 1, 0, 5, 0, 9, 3, 0],
-                                 [9, 0, 4, 0, 6, 0, 0, 0, 5],
-                                 [0, 7, 0, 3, 0, 0, 0, 1, 2],
-                                 [1, 2, 0, 0, 0, 7, 4, 0, 0],
-                                 [0, 4, 9, 2, 0, 6, 0, 0, 7]]
+        self.new_numbers = [[0]*9 for i in range(9)]
+        self.computer_numbers = [[0]*9 for i in range(9)]
+        self.auto_solve_clicked = False
 
     def set_background(self):                                   # Method that sets the background of the game
         self.window.fill((102, 178, 255))                       # Uses RGB to set the background color to light blue
@@ -80,14 +65,25 @@ class Sudoku:
                                  (255, 255, 255))               #
         self.window.blit(title, (320, 25))                      #
 
-        pygame.draw.rect(self.window,                           # Draw auto solve button
-                         (255, 255, 255), [360, 825, 200, 50])  #
-        pygame.draw.rect(self.window,                           # Give the button an outline
-                         (0, 0, 0), [360, 825, 200, 50], 3)     #
-        button_font = pygame.font.Font("freesansbold.ttf", 32)  # Set the font
-        auto_solve = button_font.render("Auto Solve",           # Put the text on the button
-                                         True, (0, 0, 0))       #
-        self.window.blit(auto_solve, (375, 835))                #
+        # Create auto solve and main menu buttons
+        pygame.draw.rect(self.window,                               # Draw auto solve button
+                             (255, 255, 255), [230, 825, 200, 50])  #
+        pygame.draw.rect(self.window,                               # Give the button an outline
+                             (0, 0, 0), [230, 825, 200, 50], 3)     #
+        button_font = pygame.font.Font("freesansbold.ttf", 32)      # Set the font
+        auto_solve = button_font.render("Auto Solve",               # Put the text on the button
+                                             True, (0, 0, 0))       #
+        self.window.blit(auto_solve, (245, 835))                    #
+
+        pygame.draw.rect(self.window,                               # Draw main menu button
+                             (255, 255, 255), [490, 825, 200, 50])  #
+        pygame.draw.rect(self.window,                               # Give the button an outline
+                             (0, 0, 0), [490, 825, 200, 50], 3)     #
+        button_font = pygame.font.Font("freesansbold.ttf", 32)      # Set the font
+        auto_solve = button_font.render("Main Menu",                # Put the text on the button
+                                            True, (0, 0, 0))        #
+        self.window.blit(auto_solve, (505, 835))                    #
+        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
         counter = 0                                             # Initialize a counter to 0
         x_location = 100.0                                      # Initialize the x location to where the board starts
@@ -135,6 +131,15 @@ class Sudoku:
                     number = self.font.render(                  # Create the image of the number to draw to the screen
                         str(self.numbers[i][j]), True,          #
                         (255, 255, 255))                        #
+                elif self.auto_solve_clicked:                   # Elif the player clicked the auto solve button
+                    if self.new_numbers[i][j] != self.computer_numbers[i][j]:  # If the player was wrong or had no num
+                        number = self.font.render(                             # Display the num in red
+                                str(self.computer_numbers[i][j]),              #
+                                     True, (255, 0, 0))                        #
+                    else:                                                      # Otherwise the player was right
+                        number = self.font.render(                             # So, display the num in green
+                            str(self.computer_numbers[i][j]),                  #
+                            True, (0, 255, 0))                                 #
                 elif self.new_numbers[i][j] != 0:               # If the user has typed a number into this square
                     number = self.font.render(                  # Create the image of the number to draw to the screen
                             str(self.new_numbers[i][j]), True,  #
@@ -242,7 +247,7 @@ class Sudoku:
                     else:
                         self.selected_col = -1
 
-                if event.type == pygame.KEYDOWN:                # If a key was pressed down
+                if event.type == pygame.KEYDOWN and not self.auto_solve_clicked:  # If a key was pressed down
                     if event.key == pygame.K_BACKSPACE:         # If the key was the backspace button
                         self.number_pressed(0)                  # Call number_pressed and pass 0 to delete the num
                     if event.key == pygame.K_DELETE:            # If the key was the delete button
@@ -268,11 +273,26 @@ class Sudoku:
                     if event.key == pygame.K_9:                 # If the key was the #9 key
                         self.number_pressed(9)                  # Call number_pressed method and pass 9
 
-            if 360 <= x_pos <= 560 and 825 <= y_pos <= 875:     # If the mouse is over the button
+            # Create the auto solve and main menu highlights, and controls
+            if 230 <= x_pos <= 430 and 825 <= y_pos <= 875:     # If the mouse is over the button
                 highlight = pygame.Surface((200, 50))           # Create a surface the size of the button
                 highlight.set_alpha(100)                        # Make the highlight see through
                 highlight.fill((255, 223, 0))                   # Set the color of the surface to gold
-                self.window.blit(highlight, (360, 825))         # Highlight the button
+                self.window.blit(highlight, (230, 825))         # Highlight the button
+                mouse_1, mouse_2, mouse_3 = pygame.mouse.get_pressed()
+                if mouse_1:                                     # If the auto_solve button was clicked
+                    self.solve_board()                          # Solve the board using backtracking
+                    self.auto_solve_clicked = True              # Set the auto_solve flag to true
+            elif 490 <= x_pos <= 690 and 825 <= y_pos <= 875:
+                highlight = pygame.Surface((200, 50))           # Create a surface the size of the button
+                highlight.set_alpha(100)                        # Make the highlight see through
+                highlight.fill((255, 223, 0))                   # Set the color of the surface to gold
+                self.window.blit(highlight, (490, 825))         # Highlight the button
+                mouse_1, mouse_2, mouse_3 = pygame.mouse.get_pressed()
+                if mouse_1:                                     # If the auto_solve button was clicked
+                    self.auto_solve_clicked = False             #
+                    self.menu = True                            # Set the auto_solve flag to true
+            # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
             self.square_clicked()                               # Call a method to update the highlighted square
 
@@ -299,6 +319,10 @@ class Sudoku:
                 if mouse_1:                                     # If the mouse1 button has been clicked
                     if 360 <= x_pos <= 560 and 200 <= y_pos <= 250:  # If the mouse is over the button
                         self.menu = False                       # Set self.menu to false to play the game
+                        for i in range(len(self.numbers)):      # Reset the player and computer arrays
+                            for j in range(len(self.numbers[i])):
+                                self.new_numbers[i][j] = self.numbers[i][j]
+                                self.computer_numbers[i][j] = self.numbers[i][j]
         else:                                                   # Otherwise, the player is on the win screen
             x_pos, y_pos = pygame.mouse.get_pos()               # Get the mouse's position
             if 340 <= x_pos <= 590 and 400 <= y_pos <= 450:     # If the mouse is over the button
@@ -539,68 +563,42 @@ class Sudoku:
                                        True, (0, 0, 0))         #
         self.window.blit(menu_button, (357, 410))               #
 
-    def __get_solution(self):
-        x = 0
-        y = -1
-        
-        while x != 8 and y != 8:                                # While the solver hasn't reached the end of the board
-            if y != 8:                                          # If the column isn't the right most column
-                y += 1                                          # Increment the column number
-            else:                                               # Otherwise
-                x += 1                                          # Increment the row number
-                y = 0                                           # Reset the column number to 0
-            current_num = 1                                     # Reset current_num to 1
+    def solve_board(self):
+        row, col = self.next_empty()
+        if row == -1 and col == -1:
+            return True
 
-            while self.numbers[x][y] != 0:                      # While the current space is not open
-                if y != 8:                                      # If the column is not at 8
-                    y += 1                                      # Increment the column number
-                else:                                           # Otherwise
-                    x += 1                                      # Increment the row number
-                    y = 0                                       # Set the column number to 0
-    
-            self.computer_numbers[x][y] = current_num           # Insert the current guess for the number
-            while not self.__check_row(x) and not self.__check_column(y):  # While there is an error in a row or column
-                if current_num != 9:                            # If the current_num isn't 9
-                    current_num += 1                            # Increment the current_num
-                    self.computer_numbers[x][y] = current_num   # Insert the current guess for the number
-                else:                                           # Otherwise, the current num is 9
-                    self.computer_numbers[x][y] = 0             # Reset the current guess to 0
-                    y -= 1                                      # Decrement y
-                    while self.numbers[x][y] != 0:              # While the space is not open
-                        if y != 0:                              # If y is not the left most column
-                            y -= 1                              # Decrement y
-                        else:                                   # Otherwise
-                            y = 8                               # Reset y to the right most column
-                            x -= 1                              # Decrement x to go up a row
-                    current_num = self.computer_numbers[x][y]   # Set current_num to the last current_num
-                    if current_num != 9:                        # If the current_num is not 9
-                        current_num += 1                        # Increment the current number
+        for i in range(1, 10):
+            if self.__check_row(i, row) and self.__check_column(i, col) and self.__check_square(i, row, col):
+                self.computer_numbers[row][col] = i
 
-    def __check_row(self, row_num):                             # Method that checks the row
-        curr_row = []                                           # Create the row as a list/array
-        for j in range(9):                                      #
-            curr_row.append(self.computer_numbers[row_num][j])  #
-        hash_table = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]             # Create a hash table initialized to 0s
-        for num in curr_row:                                    # For each number in the row
-            if hash_table[num] == 0:                            # If the hash table has a 0 still
-                hash_table[num] = 1                             # Set it to 1
-            else:                                               # Otherwise, there is a collision
-                return False                                    # Return false, the row has an error
-        return True                                             # Return True, the row is good
+                if self.solve_board():
+                    return True
 
-    def __check_column(self, col_num):                          # Method that checks the column
-        curr_col = []                                           # Create the column as a list/array
-        for i in range(9):                                      #
-            curr_col.append(self.computer_numbers[i][col_num])  #
-        hash_table = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]             # Create a hash table initialized to 0s
-        for num in curr_col:                                    # For each number in the column
-            if hash_table[num] == 0:                            # If the hash table has a 0 still
-                hash_table[num] = 1                             # Set it to 1
-            else:                                               # Otherwise, there is a collision
-                return False                                    # Return false, the column has an error
-        return True                                             # Return True, the column is good
+                self.computer_numbers[row][col] = 0
 
-    def __check_square(self, row_num, col_num):                 # Method that checks the square
+        return False
+
+    def next_empty(self):
+        for i in range(len(self.computer_numbers)):
+            for j in range(len(self.computer_numbers[i])):
+                if self.computer_numbers[i][j] == 0:
+                    return i, j
+        return -1, -1
+
+    def __check_row(self, new_num, row_num):                    # Method that checks the row
+        for j in range(9):                                      # For all numbers in the row
+            if self.computer_numbers[row_num][j] == new_num:    # If there already exists the num we wish to add
+                return False                                    # We cannot add it, so return False
+        return True                                             # Return True, the num can be in the row
+
+    def __check_column(self, new_num, col_num):                 # Method that checks the column
+        for i in range(9):                                      # For each number in the column
+            if self.computer_numbers[i][col_num] == new_num:    # If there already exists the num we wish to add
+                return False                                    # We cannot add it, so return false
+        return True                                             # Return True, the num can be added to the col
+
+    def __check_square(self, new_num, row_num, col_num):        # Method that checks the square
         curr_square = []                                        # Create a list to represent the square
         # Fill the list with the numbers in the square
         if 0 <= row_num <= 2:
@@ -643,10 +641,8 @@ class Sudoku:
                     for j in range(6, 9):
                         curr_square.append(self.computer_numbers[i][j])
 
-        hash_table = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]             # Create a hash table initialized to 0s
         for num in curr_square:                                 # For each number in the square
-            if hash_table[num] == 0:                            # If the hash table has a 0 still
-                hash_table[num] = 1                             # Set it to 1
-            else:                                               # Otherwise, there is a collision
-                return False                                    # Return false, the column has an error
-        return True                                             # Return True, the column is good
+            if num == new_num:                                  # If the new number is already in the square
+                return False                                    # The new number is invalid
+
+        return True                                             # Return True, the square is good
